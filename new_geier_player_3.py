@@ -27,15 +27,14 @@ def train_cfr(iterations, players, file1, file2, NA, digit, nodeMap, strategy_in
             history = {'open': [],   'point':[0 for _ in range(players)], 'private': [list(range(1,NA+1)) for _ in range(players)], 'next_reward' : 0}
             rewards = list(range(1,NA+1))
             # random.shuffle(rewards)
-            p_list = [1 for _ in range(players)]
             if t > prune_threshold:
                 r = random.random()
                 if r < 0.05:
-                    util[str(i)] += cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += cfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
                 else:
-                    util[str(i)] += cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += cfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
             else:
-                    util[str(i)] += cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += cfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
         # if t < LCFR_threshold and t % Discount_Interval == 0:
         #     d = ( t / Discount_Interval) / (t / Discount_Interval + 1 )
         #     for i in range(players):   
@@ -60,15 +59,14 @@ def train_mccfr(iterations, players, file1, file2, NA, digit, nodeMap, strategy_
             history = {'open': [],   'point':[0 for _ in range(players)], 'private': [list(range(1,NA+1)) for _ in range(players)], 'next_reward' : 0}
             rewards = list(range(1,NA+1))
             # random.shuffle(rewards)
-            p_list = [1 for _ in range(players)]
             if t > prune_threshold:
                 r = random.random()
                 if r < 0.05:
-                    util[str(i)] += mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += mccfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
                 else:
-                    util[str(i)] += mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += mccfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
             else:
-                    util[str(i)] += mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
+                    util[str(i)] += mccfr(history, i, t, 1,1,1, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, False)
         # if t < LCFR_threshold and t % Discount_Interval == 0:
         #     d = ( t / Discount_Interval) / (t / Discount_Interval + 1 )
         #     for i in range(players):   
@@ -76,23 +74,6 @@ def train_mccfr(iterations, players, file1, file2, NA, digit, nodeMap, strategy_
     with open(file1, 'a') as f:
         print('elapsed_time: ' + str(elapsed_time),file=f)
     return util
-
-        
-# ## 結果を見やすく出力する関数　ハゲタカがランダムじゃなかった時
-# def display_order(iterations, players,util, digit, file1, file2, NA, nodeMap):
-#     with open(file1, 'a') as f:
-#         for i in range(players):
-#             print("Average game values for player " + str(i) + ' : ' + str(round(util[str(i)] / iterations, digit)) , file = f)
-#         a = [[] for _ in range(players * NA)]
-#         for n in nodeMap.values():
-#             if len(n.infoSet) == 2:
-#                 a[0].append(n.infoSet)
-#             for i in range(1, players * NA):
-#                 if len(n.infoSet) == 3 * i:
-#                     a[i].append(n.infoSet)
-#         for i in range(len(a)):
-#             for j in a[i]:
-#                 print(nodeMap[j].toString(),file=f)
 
 ## 結果を見やすく出力する関数　ハゲタカがランダム
 def display_order_random(iterations, players,util, digit, file1, file2, NA, nodeMap):
@@ -131,7 +112,7 @@ def dump_hash(file3, nodeMap):
         print(json.dumps(has), file = f)
 
 
-def cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg):
+def cfr(history, i, t, p0,p1,p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg):
     ## 今nターン目
     n = len(history['open'])
     player = n % players
@@ -159,6 +140,7 @@ def cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file
         node = Node(history['private'][player], NA, digit)
         node.infoSet = infoSet
         nodeMap[infoSet] = node
+    node.count+=1
 
     # strategyにinformationsetとtの変数要素を組み込ませるために追加 11/5 問題ないはず
     strategyKey = infoSet + ' : ' + str(t)
@@ -173,44 +155,44 @@ def cfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file
     util = [0 for _ in range(NA)]
     nodeUtil = 0
     explored = [True for _ in range(NA)]
-    node.count+=1
+    
     for a in history['private'][player]:
         if node.regretSum[a-1] > c or (not pruning_flg):
             explored[a-1] = True
             ## 何回枝切り(pruning)されたかを数える。
-            node.pruned_count[a-1] += 1
             nexthistory = copy.deepcopy(history)
             nexthistory['open'].append(a) 
             nexthistory['private'][player].remove(a) 
-            p_list[player] *= strategy[a-1]
-            util[a-1] = cfr(nexthistory, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+            if player == 0:
+                util[a-1] = cfr(nexthistory, i, t, p0 * strategy[a-1],p1,p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+            elif player == 1:
+                util[a-1] = cfr(nexthistory, i, t, p0 , p1 *  strategy[a-1],p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+            else:
+                util[a-1] = cfr(nexthistory, i, t, p0 ,p1,  p2 *  strategy[a-1], nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
             nodeUtil += strategy[a-1] * util[a-1]
         else: 
             explored[a-1] = False
+            node.pruned_count[a-1] += 1
+
     if player == i:
-        node.util += nodeUtil
-        temp = copy.deepcopy(p_list)
-        temp.pop(player)
-        b = 1
-        for j in temp:
-            b *= j
+        # node.util += nodeUtil
         for a in history['private'][player]:
             if player == 0:
-                node.regretSum[a-1] += ((p_list[1] * p_list[2]) * (util[a-1] - nodeUtil)) * t
-                node.strategySum[a-1] += (p_list[0] * strategy[a-1])
+                node.regretSum[a-1] += p1 * p2 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p0 * strategy[a-1]
             elif player == 1:
-                node.regretSum[a-1] += ((p_list[0] * p_list[2]) * (util[a-1] - nodeUtil)) * t
-                node.strategySum[a-1] += (p_list[1] * strategy[a-1])
+                node.regretSum[a-1] += p0 * p2 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p1 * strategy[a-1]
             else:
-                node.regretSum[a-1] += ((p_list[0] * p_list[1]) * (util[a-1] - nodeUtil)) * t
-                node.strategySum[a-1] += (p_list[2] * strategy[a-1])
-                node.update_count += 1
+                node.regretSum[a-1] += p1 * p0 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p2 * strategy[a-1]
+            node.update_count += 1
     strategyMap[infoSet + ' : ' + str(t + 1)]  = node.getStrategy()
 
     return nodeUtil
 
 
-def mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg):
+def mccfr(history, i, t, p0,p1,p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg):
     ## 今nターン目
     n = len(history['open'])
     player = n % players
@@ -238,7 +220,7 @@ def mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, fi
         node = Node(history['private'][player], NA, digit)
         node.infoSet = infoSet
         nodeMap[infoSet] = node
-
+    node.count += 1
     # strategyにinformationsetとtの変数要素を組み込ませるために追加 11/5 問題ないはず
     strategyKey = infoSet + ' : ' + str(t)
     if strategyKey in strategyMap:
@@ -252,7 +234,7 @@ def mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, fi
     util = [0 for _ in range(NA)]
     nodeUtil = 0
     explored = [True for _ in range(NA)]
-    node.count += 1
+    
     # print(str(node.count) + " " + str(infoSet))
     if player == i:
         for a in history['private'][player]:
@@ -261,25 +243,30 @@ def mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, fi
                 nexthistory = copy.deepcopy(history)
                 nexthistory['open'].append(a) 
                 nexthistory['private'][player].remove(a) 
-                p_list[player] *= strategy[a-1]
-                util[a-1] = mccfr(nexthistory, i, t, p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+                if player == 0:
+                    util[a-1] = mccfr(nexthistory, i, t, p0 * strategy[a-1],p1,p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+                elif player == 1:
+                    util[a-1] = mccfr(nexthistory, i, t, p0 , p1 *  strategy[a-1],p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+                else:
+                    util[a-1] = mccfr(nexthistory, i, t, p0 ,p1,  p2 *  strategy[a-1], nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
                 nodeUtil += strategy[a-1] * util[a-1]
             else: 
                 explored[a-1] = False
                 ## 何回枝切り(pruning)されたかを数える。
                 node.pruned_count[a-1] += 1
         
-        node.util += nodeUtil
-        temp = copy.deepcopy(p_list)
-        temp.pop(player)
-        b = 1
-        for j in temp:
-            b *= j
+        # node.util += nodeUtil
         for a in history['private'][player]:
-            if explored[a-1]:
-                node.regretSum[a-1] += (b * (util[a-1] - nodeUtil)) * t
-                node.strategySum[a-1] += (p_list[player] * strategy[a-1])
-                node.update_count += 1
+            if player == 0:
+                node.regretSum[a-1] += p1 * p2 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p0 * strategy[a-1]
+            elif player == 1:
+                node.regretSum[a-1] += p0 * p2 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p1 * strategy[a-1]
+            else:
+                node.regretSum[a-1] += p1 * p0 * (util[a-1] - nodeUtil) * t
+                node.strategySum[a-1] += p2 * strategy[a-1]
+            node.update_count += 1
         strategyMap[infoSet + ' : ' + str(t + 1)]  = node.getStrategy()
 
         return nodeUtil
@@ -289,7 +276,26 @@ def mccfr(history, i, t, p_list, nodeMap, strategyMap, players, digit, file1, fi
         nexthistory = copy.deepcopy(history)
         nexthistory['open'].append(a) 
         nexthistory['private'][player].remove(a) 
-        p_list[player] *= strategy[a-1]
-        return mccfr(nexthistory, i, t,  p_list, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util , c, pruning_flg)   
+        if player == 0:
+            return  mccfr(nexthistory, i, t, p0 * strategy[a-1],p1,p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+        elif player == 1:
+            return mccfr(nexthistory, i, t, p0 , p1 *  strategy[a-1],p2, nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
+        else:
+            return mccfr(nexthistory, i, t, p0 ,p1,  p2 *  strategy[a-1], nodeMap, strategyMap, players, digit, file1, file2, rewards, NA, default_util, c, pruning_flg)
 
 
+# ## 結果を見やすく出力する関数　ハゲタカがランダムじゃなかった時
+# def display_order(iterations, players,util, digit, file1, file2, NA, nodeMap):
+#     with open(file1, 'a') as f:
+#         for i in range(players):
+#             print("Average game values for player " + str(i) + ' : ' + str(round(util[str(i)] / iterations, digit)) , file = f)
+#         a = [[] for _ in range(players * NA)]
+#         for n in nodeMap.values():
+#             if len(n.infoSet) == 2:
+#                 a[0].append(n.infoSet)
+#             for i in range(1, players * NA):
+#                 if len(n.infoSet) == 3 * i:
+#                     a[i].append(n.infoSet)
+#         for i in range(len(a)):
+#             for j in a[i]:
+#                 print(nodeMap[j].toString(),file=f)

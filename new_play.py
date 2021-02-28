@@ -4,6 +4,7 @@ import copy
 import datetime
 import math
 import time
+import os
 import json
 from new_method_geier_3 import point
 from new_method_geier_3 import make_infoset_3
@@ -27,13 +28,14 @@ digit = 5
 play_iterations = 100000
 default_util = get_default_util(players)
 
-file1 = "./対戦記録/NA_" + str(NA) + "/" +  str(dt_now) +  " play_iterations: " + str(play_iterations) + " players: " + str(players)  + ".txt"
+file1 = "./対戦記録/4枚 MCCFR iteration少ない.txt"
 # file2 = "/Users/hayashikippei/new_CFR/3_Geier/hash記録/NA_3/iterations: 1000002021-01-12 9:38:51.json"
-file2 = "/Users/hayashikippei/new_CFR/3_Geier/hash記録/NA_4/iterations: 1000002021-01-13 20:37:1.json"
+file2 = "/Users/hayashikippei/Desktop/Experiment/Geier/hash記録/NA_4iterations: 10000 MCCFR.json"
 f = open(file1, 'w')
 f.close()
 with open(file1, 'a') as f:
     print(file2, file = f)
+    print("4枚 MCCFR そのまま対戦 play iterations: " + str(play_iterations), file = f)
 ## ファイルの先頭に何かコメントをつけるなら。
 class Player():
     def __init__(self):
@@ -171,6 +173,15 @@ def play_2():
         with open(file1, 'a') as f:
             print("Average game values for player " + str(i) + ' : ' + str(round(PlayerMap['player_' + str(i)].util / play_iterations , digit)) , file = f)
 
+
+if __name__ == '__main__':
+    play()
+    with open(file1, 'a') as f:
+        print(file = f)
+    play_2()
+
+
+
 #二人をらんだむいして対戦
 def play_3():
     ##まず、人数分Playerクラスを作る。
@@ -222,14 +233,3 @@ def play_3():
         for i in range(players):
             with open(file1, 'a') as f:
                 print("Average game values for player " + str(i) + ' : ' + str(round(PlayerMap['player_' + str(i)].util / play_iterations , digit)) , file = f)
-
-
-if __name__ == '__main__':
-    play_3()
-
-
-
-
-
-
-

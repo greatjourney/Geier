@@ -22,8 +22,8 @@ from new_geier_player_3 import dump_hash
 ## 12/1 モジュール化
 digit = 5
 players = 3
-iterations = 100000
-NA = 2
+iterations = 10000
+NA = 4
 strategy_interval = 10000
 c = -0.5 * iterations
 prune_threshold = iterations * 0.2
@@ -32,10 +32,10 @@ Discount_Interval = 10
 dt_now = str(datetime.date.today()) + ' ' + str(datetime.datetime.now().hour) + ':' + str(datetime.datetime.now().minute) + ':' + str(datetime.datetime.now().second) 
 
 # logのアウトプット用ファイル作成
-file1 = "./学習記録/NA_" + str(NA) + "/output" +  str(dt_now) +  " iterations: " + str(iterations) + " players: " + str(players)  + ".txt"
+file1 = "./学習記録/NA_" + str(NA) + "output" +  str(dt_now) +  " iterations: " + str(iterations) + " players: " + str(players)  + ".txt"
 # file1 = "./学習記録/NA_" + str(NA) + "/count_CFR.txt"
 file2 = "./log_Player_3/NA_" + str(NA) + "/debug"  + str(dt_now) +" iterations: " + str(iterations) + " players: " + str(players) + ".txt"
-file3 = "./hash記録/NA_" + str(NA) + "/iterations: " + str(iterations) + str(dt_now) +  ".json"
+file3 = "./hash記録/NA_" + str(NA) + "iterations: " + str(iterations) +  " MCCFR.json"
 f = open(file1, 'w')
 f.close()
 f = open(file3, 'w')
